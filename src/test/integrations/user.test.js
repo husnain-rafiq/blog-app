@@ -100,6 +100,8 @@ describe('User API Testings', () => {
         role: 'user',
       });
     expect(response.statusCode).toBe(200);
+    expect(response.body.data.role).toEqual('user');
+    expect(response.body.data.username).toEqual('sidraKhalil');
     expect(response.body.data).toHaveProperty('role');
     expect(response.body.data).toHaveProperty('username');
     done();
