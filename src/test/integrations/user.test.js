@@ -5,6 +5,7 @@ import 'dotenv/config';
 const request = require('supertest');
 
 const auth = {};
+let createdUserId = '';
 
 beforeEach(async () => {
   const response = await request(app)
@@ -28,7 +29,6 @@ describe('User API Testings', () => {
       });
     expect(response.statusCode).toBe(422);
     expect(response.body.message).toBe('Invalid credentials');
-
     done();
   });
 
@@ -48,12 +48,11 @@ describe('User API Testings', () => {
       .get('/api/users/')
       // add an authorization header with the token
       .set({ authorization: `Bearer ${auth.token}`, 'content-type': 'application/json' });
-    // expect(response.body.length).toBe(1);
     expect(response.statusCode).toBe(200);
     done();
   });
 
-  test('Try to Authorizes using wrong token', async (done) => {
+  test('Try to Authenticate with wrong token', async (done) => {
     const response = await request(app)
       // add an authorization header with the token, but go to a different ID than the one stored in the token
       .get(`/api/users/1`)
@@ -63,14 +62,57 @@ describe('User API Testings', () => {
     done();
   });
 
-  test('Authorizes only correct users', async (done) => {
+  test('Access only Authorizes users', async (done) => {
     const response = await request(app)
       // add an authorization header with the token, but go to a different ID than the one stored in the token
       .get(`/api/users/1`)
       .set({ authorization: `Bearer ${auth.token}`, 'content-type': 'application/json' });
     expect(response.statusCode).toBe(200);
     expect(response.body.data).toHaveProperty('post');
+    done();
+  });
 
+  test('Create New User', async (done) => {
+    const response = await request(app)
+      .post('/api/users/')
+      // add an authorization header with the token
+      .set({ authorization: `Bearer ${auth.token}`, 'content-type': 'application/json' })
+      .send({
+        username: 'sidraSial',
+        email: 'sidra@email.com',
+        password: 'sidra@123',
+        role: 'admin',
+        isActive: 'true',
+      });
+    createdUserId = response?.body?.data?.id;
+    expect(response.statusCode).toBe(200);
+    expect(response.body.data).toHaveProperty('isActive');
+    done();
+  });
+
+  test('Update User', async (done) => {
+    const response = await request(app)
+      .put(`/api/users/${createdUserId}`)
+      // add an authorization header with the token
+      .set({ authorization: `Bearer ${auth.token}`, 'content-type': 'application/json' })
+      .send({
+        username: 'sidraKhalil',
+        role: 'user',
+      });
+    expect(response.statusCode).toBe(200);
+    expect(response.body.data).toHaveProperty('role');
+    expect(response.body.data).toHaveProperty('username');
+    done();
+  });
+
+  test('Delete User', async (done) => {
+    const response = await request(app)
+      .delete('/api/users/deleteUsers')
+      .set({ authorization: `Bearer ${auth.token}`, 'content-type': 'application/json' })
+      .send({
+        ids: [createdUserId],
+      });
+    expect(response.statusCode).toBe(200);
     done();
   });
 });
